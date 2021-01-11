@@ -3,9 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <link rel="stylesheet" href="chatroom.css">
+    <title>Enter Chat Room</title>
+    
+
 </head>
 <body>
-    <a href="quick-chat/new">Click here to create a new chat room</a>
+    <!-- text box -->
+
+    <form action="" id="loginForm">
+        <p id="loginMessage" ><b>Enter your nickname to join!</b></p>
+        <input class="inputArea1" id="nickname" autocomplete="off"/>  <br /> <br />
+        <p><b>Enter Room Name to Join a room or create a new Room!</b></p>
+        <input type="text" name="roomname"/>
+        <br>
+        <br>
+        <button type="submit" value="Join">Create</button>
+    </form>
+    <script>
+        const form=document.querySelector("form");
+        const roomname=document.querySelector('[name="roomname"]');
+
+        form.addEventListener("submit", function(event){
+            event.preventDefault();
+
+            // api call and then change location
+            window.location.href=`http://localhost:3000/quick-chat/${roomname.value}`;
+        });
+
+    </script>
 </body>
 </html>

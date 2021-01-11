@@ -4,31 +4,158 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Room</title>
+    <link rel="stylesheet" href="chatroom.css">
+    <style>
+        .welcome{
+            color: white;
+            font-size: large;
+        }
+        .recieved{
+            font-size: 16px;
+            padding-top: 12px;
+            padding-bottom: 10px;
+            padding-left: 20px;
+            background-color: #80b3ff;
+            border: 2px solid #002966;
+            border-radius: 5px;
+            width: 50%;
+            float: left;
+            margin: 10px;
+        }
+        .sent{
+            font-size: 16px;
+            padding-top: 12px;
+            padding-bottom: 10px;
+            padding-left: 20px;
+            background-color:pink;
+            border: 2px solid #002966;
+            border-radius: 5px;
+            width: 50%;
+            float: right;
+            margin: 10px;
+        }
+      
+        #chat-window{
+            text-align: left;
+            margin: 0 auto;
+            margin-bottom: 25px;
+            margin-top: 25px;
+            padding: 10px;
+            background: #fff;
+            height: 450px;
+            width: 530px;
+            border: 1px solid #a7a7a7;
+            overflow: auto;
+            border-radius: 4px;
+        }
+        body {
+        display:flex; flex-direction:column;
+        align-items:center ;
+        height: 100%;
+        }
+        #wrapper
+        {
+            margin: 0 auto;
+            padding-bottom: 25px;
+            background: rgb(155, 149, 149);
+            width: 800px;
+            max-width: 100%;
+            border: 2px solid #212121;
+            border-radius: 4px;
+        }
+        form {
+            padding: 15px 25px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+   
+        #msg {
+        flex: 1;
+        border-radius: 4px;
+        border: 1px solid #ff9800;
+        padding-bottom: 10px;
+        padding-top: 10px;
+        padding-left: 20px;
+        width: 480px;
+        margin-left: 2px;
+        }
+        .send-button{
+            background: #ff9800;
+            border: 2px solid #e66800;
+            color: white;
+            padding: 4px 10px;
+            font-weight: bold;
+            border-radius: 4px;
+            height: 40px;
+            width: 90px;
+        }
+      
+    </style>
 </head>
 <body>
-    <p>Room: <%= room %></p>
+    <p>Welcome to the Room: <%= room %></p>
+    <div id="list-of-users">
+        
+    </div>
     <div class="chat">
-        <div id="chat-window">
-    
+        
+    <div id="wrapper">
+        <div id="welcome-user">
+            
         </div>
-        <form id="chat-input">
-          <input type="text" name="msg" id="msg" placeholder="Type your Message" value="" size="110">
-          <button onclick="sendMessage()">Send</button>
-        </form>
+            <div id="chat-top">
+
+            </div>
+
+            <div id="chat-window">
+        
+            </div>
+            <form id="form">
+                <input type="file" id="myFile" />
+                <!-- <button type="submit">Upload File and Send</button> -->
+                <div id="upload-progress"></div> 
+             </form>
+            <form id="chat-input">
+                <input type="text" name="msg" id="msg" placeholder="Type your Message" value="" size="110">
+                <button onclick="sendMessage()" class="send-button">Send</button>
+            </form>
+    </div>
       </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+
         document.getElementById("chat-input").addEventListener("submit", (event) => {
             event.preventDefault();
         })
         const socket = io();
-        socket.emit('join', {room: location.pathname.replace('/quick-chat/', '')});
-        socket.on('chat_message', ({message}) => {
-            document.getElementById('chat-window').innerHTML += `<p class="recieved">${message}</p>`
+        const name=prompt("Enter Nickname");
+        document.getElementById('welcome-user').innerHTML=`<p class="welcome" align="center">Welcome ${name}</p>`;
+        socket.emit('join', {room: location.pathname.replace('/quick-chat/',""), name: name});
+        socket.on('joined_room',({name})=>{
+            document.getElementById('chat-top').innerHTML += `<p class="welcome">${name} has joined the chat</p>`
+            document.getElementById('list-of-users').innerHTML+="&nbsp&nbsp&nbsp&nbsp&nbsp<i>" + name + "</i>"
+        })
+
+       socket.on('update current users' , function(nicknames){
+        var nicknamesList = '<b>Connected Users:</b>';
+        for (i=0 ; i<nicknames.length ; i++){
+            if( i != 0 ){
+                nicknamesList += "&nbsp&nbsp&nbsp&nbsp&nbsp,";
+            }
+            nicknamesList += "&nbsp&nbsp&nbsp&nbsp&nbsp<i>" + nicknames[i] + "</i>";
+        }
+        console.log(nicknames)
+        document.getElementById('list-of-users').innerHTML=nicknamesList
+    });
+
+        socket.on('chat_message', ({message,sender}) => {
+            document.getElementById('chat-window').innerHTML += `<p class="recieved" id="recieved"><b>${sender}:</b> ${message}</p>`
         })
         const sendMessage = () => {
-            socket.emit('chat_message', {message: document.getElementById('msg').value , room: location.pathname.replace('/quick-chat/', '')})
-            document.getElementById('chat-window').innerHTML += `<p class="sent">${document.getElementById('msg').value}</p>`
+            socket.emit('chat_message', {message: document.getElementById('msg').value , room: location.pathname.replace('/quick-chat/', ''),sender:name})
+            document.getElementById('chat-window').innerHTML += `<p class="sent"><b>You: </b> ${document.getElementById('msg').value}</p>`
+            document.getElementById('msg').value=" "
         };
         
     </script>
