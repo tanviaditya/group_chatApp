@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Room</title>
     <link rel="stylesheet" href="chatroom.css">
+    <!-- Added by Saurabh -->
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         .welcome{
             color: white;
@@ -111,11 +113,15 @@
             <div id="chat-window">
         
             </div>
-            <form id="form">
-                <input type="file" id="myFile" />
-                <!-- <button type="submit">Upload File and Send</button> -->
-                <div id="upload-progress"></div> 
-             </form>
+            <div id="UploadBox">
+                <h2>File Uploader</h2>
+                <span id='UploadArea'>
+                    <label for="FileBox">Choose A File: </label><input type="file" id="FileBox"><br>
+                    <label for="NameBox">Name: </label><input type="text" id="NameBox"><br>
+         
+                    <button  type='button' id='UploadButton' class='Button'>Upload</button>
+                </span>
+            </div>
             <form id="chat-input">
                 <input type="text" name="msg" id="msg" placeholder="Type your Message" value="" size="110">
                 <button onclick="sendMessage()" class="send-button">Send</button>
@@ -138,16 +144,16 @@
         })
 
        socket.on('update current users' , function(nicknames){
-        var nicknamesList = '<b>Connected Users:</b>';
-        for (i=0 ; i<nicknames.length ; i++){
-            if( i != 0 ){
-                nicknamesList += "&nbsp&nbsp&nbsp&nbsp&nbsp,";
+            var nicknamesList = '<b>Connected Users:</b>';
+            for (i=0 ; i<nicknames.length ; i++){
+                if( i != 0 ){
+                    nicknamesList += "&nbsp&nbsp&nbsp&nbsp&nbsp,";
+                }
+                nicknamesList += "&nbsp&nbsp&nbsp&nbsp&nbsp<i>" + nicknames[i] + "</i>";
             }
-            nicknamesList += "&nbsp&nbsp&nbsp&nbsp&nbsp<i>" + nicknames[i] + "</i>";
-        }
-        console.log(nicknames)
-        document.getElementById('list-of-users').innerHTML=nicknamesList
-    });
+            console.log(nicknames)
+            document.getElementById('list-of-users').innerHTML=nicknamesList
+        });
 
         socket.on('chat_message', ({message,sender}) => {
             document.getElementById('chat-window').innerHTML += `<p class="recieved" id="recieved"><b>${sender}:</b> ${message}</p>`
@@ -157,7 +163,66 @@
             document.getElementById('chat-window').innerHTML += `<p class="sent"><b>You: </b> ${document.getElementById('msg').value}</p>`
             document.getElementById('msg').value=" "
         };
+
+    // Added by Saurabh.
+        window.addEventListener("load", Ready); 
+        function Ready(){ 
+            if(window.File && window.FileReader){ //These are the relevant HTML5 objects that we are going to use 
+                document.getElementById('UploadButton').addEventListener('click', StartUpload);  
+                document.getElementById('FileBox').addEventListener('change', FileChosen);
+            }
+            else
+            {
+                document.getElementById('UploadArea').innerHTML = "Your Browser Doesn't Support The File API Please Update Your Browser";
+            }
+        }
         
+        var SelectedFile;
+        function FileChosen(evnt) {
+            SelectedFile = evnt.target.files[0];
+            document.getElementById('NameBox').value = SelectedFile.name;
+        }
+        
+        // var socket = io.connect('http://localhost:3000');
+        var FReader;
+        var Name;
+        function StartUpload(){
+            if(document.getElementById('FileBox').value != "")
+            {
+                FReader = new FileReader();
+                Name = document.getElementById('NameBox').value;
+                var Content = "<span id='NameArea'>Uploading " + SelectedFile.name + " as " + Name + "</span>";
+                Content += '<div id="ProgressContainer"><div id="ProgressBar"></div></div><span id="percent">0%</span>';
+                Content += "<span id='Uploaded'> - <span id='MB'>0</span>/" + Math.round(SelectedFile.size / 1048576) + "MB</span>";
+                document.getElementById('UploadArea').innerHTML = Content;
+                // console.log(FReader);
+                FReader.onload = function(evnt){
+                    // console.log(evnt.target.result);
+                    socket.emit('Upload', { 'Name' : Name, Data : evnt.target.result });
+                }
+                FReader.readAsBinaryString(SelectedFile);
+                // FReader.readAsText(SelectedFile);
+                
+                socket.emit('Start', { 'Name' : Name, 'Size' : SelectedFile.size });
+            }
+            else
+            {
+                alert("Please Select A File");
+            }
+        }
+
+        var Path = "http://localhost:3000/images/";
+        socket.on('Done', function (data){
+            var Content = "<img id='Thumb' src='" + Path + data['Image'] + "' alt='" + Name + "'><br>";
+            // Content += "<button  type='button' name='Upload' value='' id='Restart' class='Button'>Upload Another</button>";
+            document.getElementById('chat-window').innerHTML += Content;
+            document.getElementById('Restart').addEventListener('click', Refresh);
+        });
+
+        function Refresh(){
+            location.reload(true);
+        }
+
     </script>
 </body>
 </html>
